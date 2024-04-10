@@ -6,6 +6,7 @@ import rospkg
 from geometry_msgs.msg import Twist, Pose, Point, Quaternion
 import time
 
+from gazebo_msgs.msg import ModelState
 from gazebo_msgs.srv import *
 
 import numpy as np
@@ -57,38 +58,57 @@ def spawn_object(model_name: str = "ooi", position: np.ndarray = np.zeros(3), ro
 
 
 def heading_publisher():
+    spawn_object()
+    print("Spawned object, now moving")
     rospy.init_node('move_straight', anonymous=True)
 
     # Get parameters from ROS parameter server
-    period = rospy.get_param('~period', 6.0)
+    period = rospy.get_param('~period', 25.0)
     speed = rospy.get_param('~speed', 0.5)
 
-    pub = rospy.Publisher('bluerov2/cmd_vel', Twist, queue_size=10)
+    pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
 
     rate = rospy.Rate(10)  # 10 Hz
 
     while not rospy.is_shutdown():
-        twist_msg = Twist()
-        twist_msg.angular.z = speed  # Initial angular velocity
+        state_msg = ModelState(
+            "ooi",
+            Pose(
+                Point(
+                    x = 0,
+                    y = 0,
+                    z = 0,
+                ), 
+                Quaternion(
+                    x = 0,
+                    y = 0,
+                    z = 0,
+                    w = 1
+                )
+            ),
+            Twist(),
+            "world"
+        )
+
+        state_msg.twist.angular.z = speed  # Initial angular velocity
 
         # Publish initial velocity for T/2 seconds
         start_time = rospy.Time.now()
         while (rospy.Time.now() - start_time).to_sec() < period/2:
-            pub.publish(twist_msg)
+            pub.publish(state_msg)
             rate.sleep()
 
         # Change angular velocity to -speed
-        twist_msg.angular.z = -speed
+        state_msg.twist.angular.z = -speed
 
         # Publish negative velocity for T/2 seconds
         start_time = rospy.Time.now()
         while (rospy.Time.now() - start_time).to_sec() < period/2:
-            pub.publish(twist_msg)
+            pub.publish(state_msg)
             rate.sleep()
 
 if __name__ == '__main__':
     try:
-        # heading_publisher()
-        spawn_object()
+        heading_publisher()
     except rospy.ROSInterruptException:
         pass
