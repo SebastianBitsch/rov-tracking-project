@@ -11,8 +11,9 @@ from gazebo_msgs.srv import *
 
 import numpy as np
 
-def spawn_object(model_name: str, position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])) -> None: 
-    """Spawn an object in Gazebo environment.
+def spawn_object(model_name: str = "ooi", position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])) -> None: 
+    """
+    Spawn an object in Gazebo environment.
 
     Args:
         model_name (str): The name of the model to spawn.
@@ -24,9 +25,10 @@ def spawn_object(model_name: str, position: np.ndarray = np.zeros(3), rotation: 
 
     Note:
         This function requires ROS and Gazebo to be running.
-
     """
-    assert position.shape[0] == 3 and rotation.shape[] == 4, "Error: position should be a vec3f and rotation a vec4f"
+    position = np.array(position)
+    rotation = np.array(rotation)
+    assert position.shape[0] == 3 and rotation.shape[0] == 4, "Error: position should be a vec3f and rotation a vec4f"
 
     model_pose = Pose(
         Point(
@@ -68,61 +70,45 @@ def spawn_object(model_name: str, position: np.ndarray = np.zeros(3), rotation: 
     print(res)
 
 
-
-def heading_publisher(model_name: str = "ooi"):
+def move_straight(model_name: str = "ooi", speed: float = 0.1, axis: str = "x"):
     rospy.init_node('move_straight', anonymous=True)
 
-    # Spawn object
-    spawn_object()
-    print("Spawned object, now moving")
-
-    # Get parameters from ROS parameter server
-    period = rospy.get_param('~period', 25.0)
-    speed = rospy.get_param('~speed', 0.5)
-
-    pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
-
     rate = rospy.Rate(10)  # 10 Hz
+    pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
+    
+    state_msg = ModelState(model_name, Pose(Point(), Quaternion()), Twist(), "world")
 
+    step = 0
     while not rospy.is_shutdown():
-        state_msg = ModelState(
-            "ooi",
-            Pose(
-                Point(
-                    x = 0,
-                    y = 0,
-                    z = 0,
-                ), 
-                Quaternion(
-                    x = 0,
-                    y = 0,
-                    z = 0,
-                    w = 1
-                )
-            ),
-            Twist(),
-            "world"
-        )
 
-        state_msg.twist.angular.z = speed  # Initial angular velocity
+        if axis == 'x':
+            state_msg.pose.position.x = speed * step
+        elif axis == 'y':
+            state_msg.pose.position.y = speed * step
+        else:
+            state_msg.pose.position.z = speed * step
+            
+        pub.publish(state_msg)
+        rate.sleep()
+        step += 1
 
-        # Publish initial velocity for T/2 seconds
-        start_time = rospy.Time.now()
-        while (rospy.Time.now() - start_time).to_sec() < period/2:
-            pub.publish(state_msg)
-            rate.sleep()
-
-        # Change angular velocity to -speed
-        state_msg.twist.angular.z = -speed
-
-        # Publish negative velocity for T/2 seconds
-        start_time = rospy.Time.now()
-        while (rospy.Time.now() - start_time).to_sec() < period/2:
-            pub.publish(state_msg)
-            rate.sleep()
 
 if __name__ == '__main__':
+
+    model_name = rospy.get_param('~model_name', "ooi")
+    model_pos = rospy.get_param('~model_pos', [0, 0, 0])
+    model_rot = rospy.get_param('~model_rot', [0, 0, 0, 1])
+    movement_axis = rospy.get_param('~move_axis', 0.1)
+    speed = rospy.get_param('~speed', 0.1)
+
     try:
-        heading_publisher()
+        # Spawn object
+        spawn_object(model_name = model_name, position = model_pos, rotation = model_rot)
+        
+        print("Spawned object, now moving")
+
+        # Move object
+        move_straight(model_name = model_name, speed = speed, axis = movement_axis)
+
     except rospy.ROSInterruptException:
         pass
