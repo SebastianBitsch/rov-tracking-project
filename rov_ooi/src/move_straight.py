@@ -11,8 +11,22 @@ from gazebo_msgs.srv import *
 
 import numpy as np
 
-def spawn_object(model_name: str = "ooi", position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])): 
-    """ """
+def spawn_object(model_name: str, position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])) -> None: 
+    """Spawn an object in Gazebo environment.
+
+    Args:
+        model_name (str): The name of the model to spawn.
+        position (np.ndarray, optional): The position of the object in the world frame. Defaults to np.zeros(3).
+        rotation (np.ndarray, optional): The rotation of the object represented as a quaternion [x, y, z, w]. Defaults to np.array([0,0,0,1]).
+
+    Raises:
+        AssertionError: If position is not a 3-element array or rotation is not a 4-element array.
+
+    Note:
+        This function requires ROS and Gazebo to be running.
+
+    """
+    assert position.shape[0] == 3 and rotation.shape[] == 4, "Error: position should be a vec3f and rotation a vec4f"
 
     model_pose = Pose(
         Point(
@@ -53,14 +67,14 @@ def spawn_object(model_name: str = "ooi", position: np.ndarray = np.zeros(3), ro
     print(f"Spawned object {model_name} with result:")
     print(res)
 
-    # We can (could) destroy the model with
-    # destroyer.call(model_name)
 
 
-def heading_publisher():
+def heading_publisher(model_name: str = "ooi"):
+    rospy.init_node('move_straight', anonymous=True)
+
+    # Spawn object
     spawn_object()
     print("Spawned object, now moving")
-    rospy.init_node('move_straight', anonymous=True)
 
     # Get parameters from ROS parameter server
     period = rospy.get_param('~period', 25.0)
