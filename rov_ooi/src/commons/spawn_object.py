@@ -9,7 +9,7 @@ from gazebo_msgs.srv import SpawnModel, DeleteModel
 import numpy as np
 
 
-def spawn_object(model_name: str = "ooi", position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])) -> None: 
+def spawn_object(model_name: str, position: np.ndarray = np.zeros(3), rotation: np.ndarray = np.array([0,0,0,1])) -> None: 
     """
     Spawn an object in Gazebo environment.
 

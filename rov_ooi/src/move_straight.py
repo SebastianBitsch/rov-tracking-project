@@ -6,14 +6,14 @@ from gazebo_msgs.msg import ModelState
 
 from commons.spawn_object import spawn_object
 
-def move_straight(model_name: str = "ooi", speed: float = 0.1, axis: str = "x"):
+def move_straight(model_name: str, speed: float, axis: str):
     """
     Moves a specified Gazebo model straight along the specified axis at a given speed.
 
     Args:
-        model_name (str, optional): The name of the Gazebo model to be moved. Defaults to "ooi".
-        speed (float, optional): The speed at which the model moves along the specified axis. Defaults to 0.1.
-        axis (str, optional): The axis along which the model moves. Can be 'x', 'y', or 'z'. Defaults to "x".
+        model_name (str, optional): The name of the Gazebo model to be moved.
+        speed (float, optional): The speed at which the model moves along the specified axis.
+        axis (str, optional): The axis along which the model moves. Can be 'x', 'y', or 'z'.
 
     Note:
         This function publishes the model's new state to the '/gazebo/set_model_state' topic in the Gazebo environment.
