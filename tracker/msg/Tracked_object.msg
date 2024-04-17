@@ -1,0 +1,8 @@
+string description
+float32 pixel_centerX
+float32 pixel_centerY
+float32 pixel_width
+float32 pixel_height
+float32 true_width
+float32 true_height
+float32 dist
