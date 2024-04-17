@@ -15,7 +15,7 @@ class SonarLocator():
         """ """
         print("Initialized Sonar point cloud object locator")
 
-        rate = rospy.Rate(10)  # 10 Hz
+        self.rate = rospy.Rate(10)  # 10 Hz
         self.location_publisher = rospy.Publisher('/rov/sonar_point_cloud', PointCloud2, queue_size=10)
         self.sonar_subscriber = rospy.Subscriber("/bluerov2/sonar_forward", LaserScan, self.sonar_callback)
 
@@ -24,15 +24,13 @@ class SonarLocator():
 
     def point_cloud(self, points, parent_frame: str):
         """ """
-        ros_dtype = PointField.FLOAT32
-        dtype = np.float32
-        itemsize = np.dtype(dtype).itemsize # A 32-bit float takes 4 bytes.
+        itemsize = np.dtype(np.float32).itemsize # A 32-bit float takes 4 bytes.
 
-        data = points.astype(dtype).tobytes() 
+        data = points.astype(np.float32).tobytes() 
 
         # The fields specify what the bytes represents. The first 4 bytes 
         # represents the x-coordinate, the next 4 the y-coordinate, etc.
-        fields = [PointField(name=n, offset=i*itemsize, datatype=ros_dtype, count=1) for i, n in enumerate('xyz')]
+        fields = [PointField(name=n, offset=i*itemsize, datatype=PointField.FLOAT32, count=1) for i, n in enumerate('xyz')]
 
         # The PointCloud2 message also has a header which specifies which 
         # coordinate frame it is represented in. 
@@ -53,7 +51,7 @@ class SonarLocator():
     def sonar_callback(self, scan: LaserScan):
         """ """ 
         ranges      = np.asarray(scan.ranges)
-        intensities = np.asarray(scan.intensities)
+        intensities = np.asarray(scan.intensities) # TODO: Should probably be used
 
         points = []
 
@@ -67,18 +65,17 @@ class SonarLocator():
             angle = scan.angle_min + i * scan.angle_increment
             x = ranges[i] * np.cos(angle)
             y = ranges[i] * np.sin(angle)
-            points.append([x,y,0])
+            points.append([x, y, 0])
 
+        # Turn points into a point cloud and publish them
         self.location_publisher.publish(self.point_cloud(np.array(points), "bluerov2/sonarforward_link"))
+        self.rate.sleep()
 
 
 if __name__ == '__main__':
-
-    # model_name = rospy.get_param('~model_name', "ooi")
     rospy.init_node('sonar_perception', anonymous=True)
     
     try:
-        print("JKNAKSJD")
         sl = SonarLocator()
     except rospy.ROSInterruptException:
         pass
