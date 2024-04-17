@@ -6,14 +6,15 @@ from gazebo_msgs.msg import ModelState
 
 from commons.spawn_object import spawn_object
 
-def move_straight(model_name: str, speed: float, axis: str):
+def move_straight(model_name: str, speed: float, axis: str, depth: float):
     """
     Moves a specified Gazebo model straight along the specified axis at a given speed.
 
     Args:
-        model_name (str, optional): The name of the Gazebo model to be moved.
-        speed (float, optional): The speed at which the model moves along the specified axis.
-        axis (str, optional): The axis along which the model moves. Can be 'x', 'y', or 'z'.
+        model_name (str): The name of the Gazebo model to be moved.
+        speed (float): The speed at which the model moves along the specified axis.
+        axis (str): The axis along which the model moves. Can be 'x', 'y', or 'z'.
+        depth (float): The depth at which to move
 
     Note:
         This function publishes the model's new state to the '/gazebo/set_model_state' topic in the Gazebo environment.
@@ -28,7 +29,8 @@ def move_straight(model_name: str, speed: float, axis: str):
     pub = rospy.Publisher('/gazebo/set_model_state', ModelState, queue_size=10)
     
     state_msg = ModelState(model_name, Pose(Point(), Quaternion()), Twist(), "world")
-
+    state_msg.z = depth
+    
     step = 0
     while not rospy.is_shutdown():
 
@@ -51,6 +53,7 @@ if __name__ == '__main__':
     model_rot = rospy.get_param('~model_rot', [0, 0, 0, 1])
     movement_axis = rospy.get_param('~move_axis', 'x')
     movement_speed = rospy.get_param('~speed', 0.1)
+    depth = rospy.get_param('~depth', 0.5)
 
     try:
         # Spawn object
@@ -59,7 +62,7 @@ if __name__ == '__main__':
         print("Spawned object, now moving")
 
         # Move object
-        move_straight(model_name = model_name, speed = movement_speed, axis = movement_axis)
+        move_straight(model_name = model_name, speed = movement_speed, axis = movement_axis, depth = depth)
 
     except rospy.ROSInterruptException:
         pass
