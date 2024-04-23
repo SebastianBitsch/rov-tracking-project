@@ -16,7 +16,6 @@ rospy.loginfo("Hello ROS!")
 
 bridge = CvBridge()
 
-
 rospack = rospkg.RosPack()
 
 trackingmode = False
@@ -26,6 +25,9 @@ tracked_object_description = ''
 
 pub = rospy.Publisher('/tracker/tracked_object', Tracked_object, queue_size=10)
 
+last_known_X = 1
+
+
 def image_callback(img_msg):
     # log some info about the image topic
     # rospy.loginfo(img_msg.header)
@@ -34,9 +36,17 @@ def image_callback(img_msg):
     try:
         cv_image = bridge.imgmsg_to_cv2(img_msg, "passthrough")
 
-        global trackingmode, centroid
+        global trackingmode, centroid, last_known_X
         if not trackingmode:
-            centroid = detect_object(cv_image)
+
+            found_object = detect_object(cv_image)
+
+            if found_object is False:
+                tobject = Tracked_object()
+                tobject.lost = True
+                tobject.pixel_centerX = last_known_X
+                pub.publish(tobject)
+
         else:
             track_object(cv_image)
     except CvBridgeError as e:
@@ -79,6 +89,7 @@ def detect_object(cv_image):
 
     highestconfidence = 0.0
 
+    found_object = False
 
     bbox = []
 
@@ -109,12 +120,14 @@ def detect_object(cv_image):
 
             global tracked_object_description
             tracked_object_description = classNames[class_id]
+            found_object = True
 
-    global trackingmode, tracker
-    init_object_tracking(cv_image, (bbox[0], bbox[1], bbox[2], bbox[3]))
-    trackingmode = True
+    if found_object is True:
+        global trackingmode, tracker
+        init_object_tracking(cv_image, (bbox[0], bbox[1], bbox[2], bbox[3]))
+        trackingmode = True
 
-    return centroid
+    return found_object
 
 
 def init_object_tracking(cv_image, bbox):
@@ -132,7 +145,7 @@ def stop_tracking():
 
 
 def track_object(cv_image):
-    global tracker, trackingtime, tracked_object_description
+    global tracker, trackingtime, tracked_object_description, last_known_X
     ok, bbox = tracker.update(cv_image)
 
     if ok:
@@ -142,7 +155,7 @@ def track_object(cv_image):
         width = bbox[2]
         height = bbox[3]
 
-        rospy.loginfo("tracked object X: " + 
+        rospy.loginfo("tracked object X: " +
                       "{:.2f} Y:".format(center[0]) +
                       "{:.2f} W: ".format(center[1]) +
                       "{:.2f} H:".format(width) +
@@ -150,20 +163,20 @@ def track_object(cv_image):
 
         tobject = Tracked_object()
         tobject.pixel_centerX = center[0]
+        last_known_X = tobject.pixel_centerX
         tobject.pixel_centerY = center[1]
         tobject.pixel_width = width
         tobject.pixel_height = height
         tobject.description = tracked_object_description
 
-        tobject.true_width = 0.30
-        tobject.true_height = 0.20
+        tobject.true_width = 300
+        tobject.true_height = 200
 
-        focal_length = 0.015
+        focal_length = 15
 
-        tobject.dist = (tobject.true_width * focal_length) / tobject.pixel_width
+        tobject.dist = focal_length * tobject.true_height * 1080 / (tobject.pixel_height * 20)
 
-
-
+        tobject.lost = False
 
         pub.publish(tobject)
 
@@ -176,9 +189,6 @@ def track_object(cv_image):
 
 
 sub_image = rospy.Subscriber("/bluerov2/camera_front/camera_image", Image, image_callback)
-
-
-
 
 # Loop to keep the program from shutting down unless ROS is shut down, or CTRL+C is pressed
 while not rospy.is_shutdown():
