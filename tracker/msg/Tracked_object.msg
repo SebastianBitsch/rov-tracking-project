@@ -6,3 +6,4 @@ float32 pixel_height
 float32 true_width
 float32 true_height
 float32 dist
+bool lost
