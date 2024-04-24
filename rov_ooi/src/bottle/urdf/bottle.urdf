@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-4-g7f85cfe  Build Version: 1.6.7995.38578
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="bottle">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="-0.0208430218233816 0.00882543834917057 0.0260368396773652"
+        rpy="0 0 0" />
+      <mass
+        value="0.0448778508136503" />
+      <inertia
+        ixx="0.000321290318809129"
+        ixy="2.14787200126771E-08"
+        ixz="9.21633636332947E-08"
+        iyy="0.000321221874711378"
+        iyz="-4.02548712064884E-08"
+        izz="6.49254806931707E-05" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bottle/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://bottle/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>

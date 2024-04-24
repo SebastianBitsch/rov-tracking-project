@@ -7,6 +7,7 @@ import geometry_msgs.msg as geometry_msgs
 from PID import PIDRegulator
 import tf.transformations as trans
 import numpy
+from std_msgs.msg import Float32
 
 
 class TargetFollower:
@@ -17,6 +18,7 @@ class TargetFollower:
 
         self.cmd_vel_pub = rospy.Publisher('/bluerov2/cmd_vel', Twist, queue_size=10)
         rospy.Subscriber('/tracker/tracked_object', Tracked_object, self.target_position_callback)
+        rospy.Subscriber('/rov/sonar_distance', Float32, self.sonar_distancer_callback)
 
         self.GOAL_TOLERANCE = 5
         self.LINEAR_GAIN = 3.0
@@ -29,6 +31,10 @@ class TargetFollower:
 
         self.pos_des = numpy.zeros(3)
         self.quat_des = numpy.array([0, 0, 0, 1])
+
+
+    def sonar_distancer_callback(self, data): #call teh sonar data 
+        self.dis = data
 
     def target_position_callback(self, data):
         self.target_position = data
@@ -68,8 +74,8 @@ class TargetFollower:
 
             error_dist_normalized = 0
 
-            if error_v_normalized + error_h_normalized < 0.1:
-                error_dist = desired_distance - self.target_position.dist
+            if error_v_normalized + error_h_normalized < 0.1 and self.dis is not None:
+                error_dist = desired_distance - self.dis*1000 #added self.dis which will host the sonar distance from sonar, converted from m to mm
                 error_dist_normalized = normalize(error_dist, -5000, 5000)
 
             # q = msg.pose.pose.orientation
